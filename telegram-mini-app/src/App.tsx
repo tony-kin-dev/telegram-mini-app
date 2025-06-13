@@ -17,7 +17,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string|null>(null);
 
-  
   useEffect(() => {
     // Инициализация Telegram WebApp MainButton
     const tg = (window as any).Telegram?.WebApp;
