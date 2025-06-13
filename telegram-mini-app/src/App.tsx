@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Typography, TextField, Button, MenuItem, Box } from '@mui/material';
 
 const services = [
@@ -17,12 +17,25 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string|null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Инициализация Telegram WebApp MainButton
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      tg.MainButton.setText('Записаться');
+      tg.MainButton.show();
+      tg.MainButton.onClick(handleSubmit as any);
+    }
+    return () => {
+      if (tg) tg.MainButton.offClick(handleSubmit as any);
+    };
+    // eslint-disable-next-line
+  }, [service, date, time, name, phone, email]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setSuccess(null);
     try {
-      console.log('Получена заявка:', { service, date, time, name, phone, email });
       const res = await fetch('http://localhost:5000/api/booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,11 +45,13 @@ function App() {
       if (data.ok) {
         setSuccess('Заявка успешно отправлена!');
         setService(''); setDate(''); setTime(''); setName(''); setPhone(''); setEmail('');
+        // Закрыть мини-приложение в Telegram
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg) tg.close();
       } else {
         setSuccess('Ошибка при отправке заявки. Попробуйте позже.');
       }
-    } catch (e) {
-      console.error('Ошибка при отправке заявки:', e);
+    } catch {
       setSuccess('Ошибка при отправке заявки. Попробуйте позже.');
     }
     setLoading(false);
@@ -105,7 +120,7 @@ function App() {
           fullWidth
           margin="normal"
         />
-        <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }} disabled={loading}>
+        <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }} disabled={loading} style={{ display: (window as any).Telegram?.WebApp ? 'none' : 'block' }}>
           {loading ? 'Отправка...' : 'Записаться'}
         </Button>
         {success && (
